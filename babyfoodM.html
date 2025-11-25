@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>寶寶副食品日曆 App (完整版) 👶</title>
+    <style>
+        :root {
+            --primary-color: #FF9A9E;
+            --bg-color: #fdf2f8;
+            --meat-color: #ffcdd2; --meat-text: #b71c1c;
+            --veg-color: #c8e6c9; --veg-text: #1b5e20;
+            --sea-color: #bbdefb; --sea-text: #0d47a1;
+            --grain-color: #fff9c4; --grain-text: #f57f17;
+            --other-color: #f5f5f5; --other-text: #616161;
+            --alert-color: #ff5252;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 10px;
+            padding-bottom: 50px;
+        }
+
+        /* Header Layout */
+        .header-controls {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .month-display {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #444;
+        }
+
+        .btn-icon {
+            background: white;
+            color: #666;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.2em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex: 1;
+            touch-action: manipulation;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-stat { background-color: #66bb6a; flex: 0.6; }
+
+        /* Calendar Grid */
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .day-name {
+            text-align: center;
+            font-weight: bold;
+            color: #888;
+            font-size: 0.9em;
+            padding-bottom: 5px;
+        }
+
+        .day {
+            background-color: white;
+            border-radius: 8px;
+            min-height: 70px;
+            padding: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+
+        .today { border: 2px solid var(--primary-color); }
+        .day-number { font-weight: bold; color: #bbb; font-size: 0.8em; margin-bottom: 2px; }
+
+        .food-tag {
+            font-size: 0.7em;
+            padding: 2px 4px;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
+        .tag-meat { background-color: var(--meat-color); color: var(--meat-text); }
+        .tag-veg { background-color: var(--veg-color); color: var(--veg-text); }
+        .tag-sea { background-color: var(--sea-color); color: var(--sea-text); }
+        .tag-grain { background-color: var(--grain-color); color: var(--grain-text); }
+        .tag-other { background-color: var(--other-color); color: var(--other-text); }
+        
+        .allergy-dot {
+            display: inline-block; width: 6px; height: 6px;
+            background-color: red; border-radius: 50%; margin-left: 2px;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .modal-content {
+            background-color: white;
+            width: 100%;
+            max-width: 600px;
+            height: 90vh;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease-out;
+            overflow-y: auto;
+        }
+        
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        h3 { margin: 0 0 15px 0; font-size: 1.3em; color: #333; display: flex; justify-content: space-between; align-items: center; }
+        
+        .input-area { background: #f5f5f5; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        label { font-size: 0.9em; color: #666; margin-bottom: 4px; display: block; }
+        
+        input[type="text"], select, textarea {
+            width: 100%; padding: 12px;
+            border: 1px solid #ddd; border-radius: 8px;
+            font-size: 16px; margin-bottom: 10px;
+            background: white; box-sizing: border-box;
+        }
+
+        .checkbox-group {
+            display: flex; align-items: center; gap: 8px;
+            margin: 5px 0 15px 0; color: var(--alert-color); font-weight: bold;
+            padding: 10px; background: #fff0f0; border-radius: 8px;
+        }
+        input[type="checkbox"] { width: 20px; height: 20px; }
+
+        .add-btn { width: 100%; background-color: #4fc3f7; color: #0277bd; margin-bottom: 10px; }
+        
+        .temp-list { flex: 1; overflow-y: auto; margin-bottom: 10px; }
+        .temp-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 5px; border-bottom: 1px solid #eee; font-size: 1.1em;
+        }
+        .btn-delete { background-color: #ffebEE; color: #c62828; padding: 6px 12px; border-radius: 6px; flex: unset; width: auto; font-size: 0.9em; }
+
+        .modal-buttons { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: auto; }
+        .btn-cancel { background-color: #e0e0e0; color: #333; }
+        .btn-save { background-color: var(--primary-color); }
+
+        /* Stats */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-box { padding: 12px; border-radius: 10px; font-size: 0.95em; }
+
+        /* Import/Export Helper Text */
+        .helper-text { font-size: 0.85em; color: #666; background: #eee; padding: 10px; border-radius: 8px; margin-bottom: 10px; line-height: 1.5; }
+        .code-block { background: #333; color: #fff; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 0.9em; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header-controls">
+        <div class="top-row">
+            <div class="month-display" id="currentMonthYear"></div>
+            <button class="btn-icon" onclick="openSettings()">⚙️</button>
+        </div>
+        <div class="btn-group">
+            <button onclick="changeMonth(-1)">❮ 上月</button>
+            <button class="btn-stat" onclick="openStats()">📊 統計</button>
+            <button onclick="changeMonth(1)">下月 ❯</button>
+        </div>
+    </div>
+
+    <div class="calendar" id="calendar"></div>
+
+    <!-- 編輯視窗 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalDateTitle">編輯紀錄</h3>
+            <div class="input-area">
+                <label>食材名稱</label>
+                <input type="text" id="foodName" list="historyList" placeholder="輸入名稱 (如: 南瓜)">
+                <datalist id="historyList"></datalist>
+                <label>分類</label>
+                <select id="foodCategory">
+                    <option value="veg">🥬 蔬菜類</option>
+                    <option value="meat">🥩 肉類</option>
+                    <option value="sea">🐟 海鮮類</option>
+                    <option value="grain">🍚 五穀/澱粉</option>
+                    <option value="other">🥄 其他/水果</option>
+                </select>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isAllergic">
+                    <label for="isAllergic">有過敏反應？</label>
+                </div>
+                <button class="add-btn" onclick="addTempItem()">⬇️ 加入下方清單</button>
+            </div>
+            <div style="font-size:0.9em; color:#888; margin-bottom:5px;">今日已吃清單：</div>
+            <div class="temp-list" id="tempListArea"></div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal()">取消</button>
+                <button class="btn-save" onclick="saveDay()">💾 完成並儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 統計視窗 -->
+    <div id="statModal" class="modal">
+        <div class="modal-content" style="height: auto; max-height: 85vh;">
+            <h3>📊 食材里程碑 <span onclick="document.getElementById('statModal').style.display='none'" style="font-size:0.8em; color:#999; cursor:pointer;">✖</span></h3>
+            <p>目前解鎖了 <span id="totalCount" style="font-weight:bold; font-size:1.4em; color:var(--primary-color)">0</span> 種食材！</p>
+            <div class="stat-grid" id="statGrid"></div>
+            <div style="margin-top: 20px;"><button onclick="document.getElementById('statModal').style.display='none'" style="width:100%">關閉</button></div>
+        </div>
+    </div>
+
+    <!-- 設定/匯入視窗 -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h3>⚙️ 資料管理 <span onclick="document.getElementById('settingsModal').style.display='none'" style="font-size:0.8em; color:#999; cursor:pointer;">✖</span></h3>
+            
+            <label>批次匯入舊資料</label>
+            <div class="helper-text">
+                請依照格式：<b>YYYY-MM-DD 食材名稱 分類</b><br>
+                (分類代號：蔬菜=veg, 肉=meat, 海鮮=sea, 五穀=grain, 其他=other)<br>
+                若過敏請在最後加 "alert"
+            </div>
+            <div class="code-block">
+                2024-01-01 南瓜泥 veg<br>
+                2024-01-02 十倍粥 grain<br>
+                2024-01-05 蛋黃 other alert
+            </div>
+            <textarea id="importText" style="height: 150px;" placeholder="請在此貼上你的舊資料..."></textarea>
+            
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="document.getElementById('settingsModal').style.display='none'">關閉</button>
+                <button class="btn-save" onclick="importData()">🚀 開始匯入</button>
+            </div>
+            <div style="margin-top:20px; padding-top:20px; border-top:1px solid #eee;">
+                 <button onclick="exportData()" style="background-color:#78909c; width:100%">📤 匯出備份資料 (JSON)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const calendarEl = document.getElementById('calendar');
+        const currentMonthYearEl = document.getElementById('currentMonthYear');
+        const modal = document.getElementById('modal');
+        const historyList = document.getElementById('historyList');
+        
+        let currentDate = new Date();
+        let selectedDateKey = null;
+        let tempIngredients = [];
+
+        const categories = {
+            meat: { name: "肉類", icon: "🥩", class: "tag-meat" },
+            veg: { name: "蔬菜", icon: "🥬", class: "tag-veg" },
+            sea: { name: "海鮮", icon: "🐟", class: "tag-sea" },
+            grain: { name: "五穀", icon: "🍚", class: "tag-grain" },
+            other: { name: "其他", icon: "🥄", class: "tag-other" }
+        };
+
+        // 為了匯入方便，建立中文對照
+        const catMapping = {
+            "肉": "meat", "肉類": "meat", "meat": "meat",
+            "菜": "veg", "蔬菜": "veg", "veg": "veg",
+            "魚": "sea", "海鮮": "sea", "sea": "sea",
+            "飯": "grain", "米": "grain", "粥": "grain", "五穀": "grain", "grain": "grain",
+            "他": "other", "其他": "other", "other": "other"
+        };
+
+        updateHistoryDropdown();
+        renderCalendar();
+
+        function renderCalendar() {
+            calendarEl.innerHTML = '';
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            currentMonthYearEl.innerText = `${year}年 ${month + 1}月`;
+
+            ['日', '一', '二', '三', '四', '五', '六'].forEach(day => {
+                const d = document.createElement('div');
+                d.className = 'day-name';
+                d.innerText = day;
+                calendarEl.appendChild(d);
+            });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const empty = document.createElement('div');
+                empty.style.visibility = 'hidden';
+                calendarEl.appendChild(empty);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'day';
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                const today = new Date();
+                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    dayDiv.classList.add('today');
+                }
+
+                dayDiv.innerHTML = `<div class="day-number">${day}</div>`;
+
+                const storedData = localStorage.getItem(dateKey);
+                if (storedData) {
+                    try {
+                        const items = JSON.parse(storedData);
+                        const displayItems = items.slice(0, 4); 
+                        displayItems.forEach(item => {
+                            const cat = categories[item.category] || categories.other;
+                            const alertDot = item.allergic ? '<span class="allergy-dot"></span>' : '';
+                            const tag = document.createElement('div');
+                            tag.className = `food-tag ${cat.class}`;
+                            tag.innerHTML = `${item.name}${alertDot}`;
+                            dayDiv.appendChild(tag);
+                        });
+                        if (items.length > 4) {
+                            const more = document.createElement('div');
+                            more.style.fontSize = '10px';
+                            more.style.color = '#999';
+                            more.style.textAlign = 'center';
+                            more.innerText = '...';
+                            dayDiv.appendChild(more);
+                        }
+                    } catch (e) {}
+                }
+
+                dayDiv.onclick = () => openModal(dateKey, day);
+                calendarEl.appendChild(dayDiv);
+            }
+        }
+
+        function changeMonth(step) {
+            currentDate.setMonth(currentDate.getMonth() + step);
+            renderCalendar();
+        }
+
+        function openModal(dateKey, day) {
+            selectedDateKey = dateKey;
+            document.getElementById('modalDateTitle').innerHTML = `${dateKey.split('-')[1]}月${dateKey.split('-')[2]}日 <span style="font-size:0.7em; font-weight:normal; color:#666;">紀錄</span>`;
+            
+            const stored = localStorage.getItem(dateKey);
+            tempIngredients = stored ? JSON.parse(stored) : [];
+            
+            renderTempList();
+            resetInput();
+            modal.style.display = 'flex';
+        }
+
+        function resetInput() {
+            document.getElementById('foodName').value = '';
+            document.getElementById('isAllergic').checked = false;
+        }
+
+        function addTempItem() {
+            const name = document.getElementById('foodName').value.trim();
+            const category = document.getElementById('foodCategory').value;
+            const allergic = document.getElementById('isAllergic').checked;
+
+            if (!name) return;
+            tempIngredients.push({ name, category, allergic });
+            resetInput();
+            renderTempList();
+        }
+
+        function removeTempItem(index) {
+            tempIngredients.splice(index, 1);
+            renderTempList();
+        }
+
+        function renderTempList() {
+            const listArea = document.getElementById('tempListArea');
+            listArea.innerHTML = '';
+            if (tempIngredients.length === 0) {
+                listArea.innerHTML = '<div style="color:#ddd; text-align:center; padding:20px;">(目前沒有紀錄)</div>';
+                return;
+            }
+            tempIngredients.forEach((item, index) => {
+                const cat = categories[item.category] || categories.other;
+                const div = document.createElement('div');
+                div.className = 'temp-item';
+                div.innerHTML = `
+                    <span style="display:flex; align-items:center;">
+                        <span style="font-size:1.2em; margin-right:5px;">${cat.icon}</span>
+                        <b>${item.name}</b> 
+                        ${item.allergic ? '<span style="color:red; font-size:0.8em; background:#ffebee; padding:2px 5px; border-radius:4px; margin-left:5px;">⚠️過敏</span>' : ''}
+                    </span>
+                    <button class="btn-delete" onclick="removeTempItem(${index})">刪除</button>
+                `;
+                listArea.appendChild(div);
+            });
+        }
+
+        function saveDay() {
+            if (tempIngredients.length > 0) {
+                localStorage.setItem(selectedDateKey, JSON.stringify(tempIngredients));
+            } else {
+                localStorage.removeItem(selectedDateKey);
+            }
+            updateHistoryDropdown();
+            closeModal();
+            renderCalendar();
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        function getAllIngredients() {
+            const allItems = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    try {
+                        const items = JSON.parse(localStorage.getItem(key));
+                        if (Array.isArray(items)) allItems.push(...items);
+                    } catch(e) {}
+                }
+            }
+            return allItems;
+        }
+
+        function updateHistoryDropdown() {
+            const allItems = getAllIngredients();
+            const uniqueNames = [...new Set(allItems.map(i => i.name))];
+            historyList.innerHTML = '';
+            uniqueNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                historyList.appendChild(option);
+            });
+        }
+
+        function openStats() {
+            const allItems = getAllIngredients();
+            const stats = { meat: new Set(), veg: new Set(), sea: new Set(), grain: new Set(), other: new Set() };
+            let totalUnique = new Set();
+
+            allItems.forEach(item => {
+                let catKey = item.category;
+                if (!categories[catKey]) catKey = 'other';
+                stats[catKey].add(item.name);
+                totalUnique.add(item.name);
+            });
+
+            document.getElementById('totalCount').innerText = totalUnique.size;
+            const statGrid = document.getElementById('statGrid');
+            statGrid.innerHTML = '';
+
+            Object.keys(categories).forEach(key => {
+                const cat = categories[key];
+                const list = Array.from(stats[key]);
+                const box = document.createElement('div');
+                box.className = `stat-box ${cat.class}`;
+                box.innerHTML = `
+                    <div style="font-weight:bold; margin-bottom:5px; font-size:1.1em;">${cat.icon} ${cat.name} <span style="font-size:0.8em; opacity:0.7;">(${list.length})</span></div>
+                    <div style="line-height:1.4; font-size:0.9em;">${list.join('、') || '-'}</div>
+                `;
+                statGrid.appendChild(box);
+            });
+            document.getElementById('statModal').style.display = 'flex';
+        }
+
+        // --- 匯入匯出功能 ---
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function importData() {
+            const text = document.getElementById('importText').value.trim();
+            if (!text) return alert("請先輸入資料！");
+
+            const lines = text.split('\n');
+            let successCount = 0;
+
+            lines.forEach(line => {
+                // 格式: Date Name Category Alert
+                const parts = line.trim().split(/\s+/); // 用空白分割
+                if (parts.length >= 3) {
+                    const date = parts[0];
+                    const name = parts[1];
+                    let catRaw = parts[2];
+                    const alertRaw = parts[3] || "";
+
+                    // 檢查日期格式
+                    if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return;
+
+                    const cat = catMapping[catRaw] || "other";
+                    const isAllergic = (alertRaw === "alert" || alertRaw === "過敏");
+
+                    // 讀取舊資料並附加
+                    let dayItems = [];
+                    const stored = localStorage.getItem(date);
+                    if (stored) {
+                        try { dayItems = JSON.parse(stored); } catch(e) {}
+                    }
+
+                    // 避免重複
+                    if (!dayItems.some(i => i.name === name)) {
+                        dayItems.push({ name: name, category: cat, allergic: isAllergic });
+                        localStorage.setItem(date, JSON.stringify(dayItems));
+                        successCount++;
+                    }
+                }
+            });
+
+            alert(`成功匯入 ${successCount} 筆資料！`);
+            document.getElementById('settingsModal').style.display = 'none';
+            document.getElementById('importText').value = '';
+            renderCalendar();
+            updateHistoryDropdown();
+        }
+
+        function exportData() {
+            const data = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    data[key] = JSON.parse(localStorage.getItem(key));
+                }
+            }
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "baby-food-backup.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) closeModal();
+            if (event.target == document.getElementById('statModal')) document.getElementById('statModal').style.display = 'none';
+            if (event.target == document.getElementById('settingsModal')) document.getElementById('settingsModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
